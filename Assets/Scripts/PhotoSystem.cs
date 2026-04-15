@@ -5,6 +5,7 @@ public class PhotoSystem : MonoBehaviour
     [Header("References")]
     public Camera playerCamera;
     public PhotoBag photoBag;
+    public PhotoUI photoUI;
 
     [Header("Photo Settings")]
     public float photoRange = 20f;
@@ -86,6 +87,11 @@ public class PhotoSystem : MonoBehaviour
         }
 
         currentPhoto = new PhotoData(photoScore, developTime);
+
+        if (photoUI != null)
+        {
+            photoUI.TriggerFlash();
+        }
     }
 
     void PutPhotoInBag()
