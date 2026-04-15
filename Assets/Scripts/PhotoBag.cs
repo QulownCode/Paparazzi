@@ -6,7 +6,7 @@ public class PhotoBag : MonoBehaviour
     public int bagCapacity = 5;
     public int quota = 500;
 
-    public List<PhotoSystem.PhotoData> bagPhotos = new List<PhotoSystem.PhotoData>();
+    public List<PhotoData> bagPhotos = new List<PhotoData>();
 
     private int selectedSlot = -1;
     private int currentScore = 0;
@@ -15,7 +15,7 @@ public class PhotoBag : MonoBehaviour
     public int SelectedSlot => selectedSlot;
     public int Quota => quota;
     public int BagCapacity => bagCapacity;
-    public List<PhotoSystem.PhotoData> BagPhotos => bagPhotos;
+    public List<PhotoData> BagPhotos => bagPhotos;
 
     void Update()
     {
@@ -25,7 +25,7 @@ public class PhotoBag : MonoBehaviour
         RecalculateScore();
     }
 
-    public bool TryAddPhoto(PhotoSystem.PhotoData photo)
+    public bool TryAddPhoto(PhotoData photo)
     {
         if (bagPhotos.Count >= bagCapacity) return false;
 

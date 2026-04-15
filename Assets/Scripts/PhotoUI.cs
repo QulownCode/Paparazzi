@@ -44,7 +44,7 @@ public class PhotoUI : MonoBehaviour
 
         if (currentPhotoText != null)
         {
-            PhotoSystem.PhotoData currentPhoto = photoSystem.CurrentPhoto;
+            PhotoData currentPhoto = photoSystem.CurrentPhoto;
 
             if (currentPhoto == null)
             {
@@ -86,7 +86,7 @@ public class PhotoUI : MonoBehaviour
             return;
         }
 
-        PhotoSystem.PhotoData photo = photoBag.BagPhotos[index];
+        PhotoData photo = photoBag.BagPhotos[index];
 
         if (photo.isDeveloped)
         {
