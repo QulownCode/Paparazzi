@@ -19,7 +19,6 @@ public class PhotoBag : MonoBehaviour
 
     void Update()
     {
-        UpdateBagPhotos();
         HandleSlotSelection();
         HandleSlotActions();
         RecalculateScore();
@@ -32,15 +31,6 @@ public class PhotoBag : MonoBehaviour
         bagPhotos.Add(photo);
         return true;
     }
-
-    void UpdateBagPhotos()
-    {
-        for (int i = 0; i < bagPhotos.Count; i++)
-        {
-            bagPhotos[i].UpdateDevelopment(Time.deltaTime);
-        }
-    }
-
     void RecalculateScore()
     {
         currentScore = 0;

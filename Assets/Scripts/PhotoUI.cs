@@ -55,7 +55,7 @@ public class PhotoUI : MonoBehaviour
             bagText.text = "Bag: " + photoBag.BagPhotos.Count + "/" + photoBag.BagCapacity;
 
         if (controlsText != null)
-            controlsText.text = "LMB Take | RMB Zoom | E Shake | Q Bag | R Throw | 1-5 Select | T Trash Bag Photo";
+            controlsText.text = "LMB Take | RMB Zoom | E Shake | Q Bag | R Throw | 1-5 Select | T Trash Bagged Photo";
 
         if (currentPhotoText != null)
         {

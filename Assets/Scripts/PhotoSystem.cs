@@ -9,7 +9,7 @@ public class PhotoSystem : MonoBehaviour
 
     [Header("Photo Settings")]
     public float photoRange = 20f;
-    public float developTime = 2.5f;
+    public float developTime = 10f;
     public float shakeReduceAmount = 0.12f;
 
     [Header("Scoring")]
