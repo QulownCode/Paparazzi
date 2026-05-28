@@ -8,12 +8,14 @@ public class PlayerMovement : MonoBehaviour
     public float gravity = -9.81f;
     public Transform cameraTransform;
 
+
     private CharacterController controller;
     private Vector3 velocity;
 
     void Start()
     {
         controller = GetComponent<CharacterController>();
+    
     }
 
     void Update()
