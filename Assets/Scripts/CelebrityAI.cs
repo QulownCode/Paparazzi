@@ -4,73 +4,54 @@ public class CelebrityAI : MonoBehaviour
 {
     public Transform[] waypoints;
     public float moveSpeed = 2f;
-    public float waitTime = 2f;
-    public float actionTime = 3f;
+    public float waitTime = 4f;
+    public float actionTime = 4f;
 
     private Animator animator;
 
     private int currentWaypoint = 0;
 
-    private bool waiting = false;
-    private bool performingAction = false;
+    private enum State
+    {
+        Walk,
+        Wait,
+        Act
+    }
 
-    private float waitTimer = 0f;
-    private float actionTimer = 0f;
+    private State currentState;
+
+    private float timer = 0f;
 
     void Start()
     {
         animator = GetComponent<Animator>();
+        currentState = State.Walk;
     }
 
     void Update()
     {
         if (waypoints.Length == 0) return;
 
-        // ACTION STATE
-        if (performingAction)
+        switch (currentState)
         {
-            actionTimer -= Time.deltaTime;
+            case State.Walk:
+                UpdateWalk();
+                break;
 
-            animator.SetBool("IsWalking", false);
+            case State.Wait:
+                UpdateWait();
+                break;
 
-            if (actionTimer <= 0f)
-            {
-                performingAction = false;
-            }
-
-            return;
+            case State.Act:
+                UpdateAct();
+                break;
         }
+        Debug.Log("STATE: " + currentState + " POS: " + transform.position);
+    }
 
-        // WAITING STATE
-        if (waiting)
-        {
-            waitTimer -= Time.deltaTime;
-
-            animator.SetBool("IsWalking", false);
-
-            if (waitTimer <= 0f)
-            {
-                waiting = false;
-
-                int randomAction = Random.Range(1, 3);
-
-                performingAction = true;
-                actionTimer = actionTime;
-
-                if (randomAction == 1)
-                {
-                    animator.Play("Wave");
-                }
-                else
-                {
-                    animator.Play("Pose 1");
-                }
-            }
-
-            return;
-        }
-
-        // MOVEMENT
+    // ---------------- WALK ----------------
+    void UpdateWalk()
+    {
         Transform target = waypoints[currentWaypoint];
 
         Vector3 direction = target.position - transform.position;
@@ -80,32 +61,72 @@ public class CelebrityAI : MonoBehaviour
 
         direction.Normalize();
 
+        // movement
         transform.position += direction * moveSpeed * Time.deltaTime;
 
+        // rotation
         if (direction != Vector3.zero)
         {
             Quaternion lookRotation = Quaternion.LookRotation(direction);
-
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation,
-                lookRotation,
-                5f * Time.deltaTime
-            );
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, 5f * Time.deltaTime);
         }
 
         animator.SetBool("IsWalking", true);
 
+        // reached waypoint
         if (distance < 1f)
         {
+            currentState = State.Wait;
+            timer = waitTime;
+        }
+    }
+
+    // ---------------- WAIT ----------------
+    void UpdateWait()
+    {
+        animator.SetBool("IsWalking", false);
+
+        timer -= Time.deltaTime;
+
+        if (timer <= 0f)
+        {
+            StartAction();
+        }
+    }
+
+    // ---------------- ACT ----------------
+    void UpdateAct()
+    {
+        animator.SetBool("IsWalking", false);
+
+        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+
+        // Wait until animation is actually done playing
+        if (stateInfo.normalizedTime >= 1f)
+        {
+            currentState = State.Walk;
+
             currentWaypoint++;
-
             if (currentWaypoint >= waypoints.Length)
-            {
                 currentWaypoint = 0;
-            }
+        }
+    }
 
-            waiting = true;
-            waitTimer = waitTime;
+    // ---------------- ACTION START ----------------
+    void StartAction()
+    {
+        currentState = State.Act;
+        timer = actionTime;
+
+        int randomAction = Random.Range(0, 2);
+
+        if (randomAction == 0)
+        {
+            animator.SetTrigger("Nails");
+        }
+        else
+        {
+            animator.SetTrigger("Wave");
         }
     }
 }
