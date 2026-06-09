@@ -3,12 +3,15 @@ using UnityEngine;
 [System.Serializable]
 public class PhotoData
 {
-    public int score;
+    public float score;
     public float developTimer;
     public float maxDevelopTime;
     public bool isDeveloped;
 
-    public PhotoData(int score, float developTime)
+    public PhotoTier tier;
+    
+
+    public PhotoData(float score, float developTime)
     {
         this.score = score;
         this.developTimer = developTime;

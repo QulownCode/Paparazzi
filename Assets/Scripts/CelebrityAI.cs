@@ -5,7 +5,6 @@ public class CelebrityAI : MonoBehaviour
     public Transform[] waypoints;
     public float moveSpeed = 2f;
     public float waitTime = 4f;
-    public float actionTime = 4f;
 
     private Animator animator;
 
@@ -25,7 +24,7 @@ public class CelebrityAI : MonoBehaviour
     void Start()
     {
         animator = GetComponent<Animator>();
-        currentState = State.Walk;
+        EnterWalkState();
     }
 
     void Update()
@@ -46,7 +45,6 @@ public class CelebrityAI : MonoBehaviour
                 UpdateAct();
                 break;
         }
-        Debug.Log("STATE: " + currentState + " POS: " + transform.position);
     }
 
     // ---------------- WALK ----------------
@@ -61,10 +59,8 @@ public class CelebrityAI : MonoBehaviour
 
         direction.Normalize();
 
-        // movement
         transform.position += direction * moveSpeed * Time.deltaTime;
 
-        // rotation
         if (direction != Vector3.zero)
         {
             Quaternion lookRotation = Quaternion.LookRotation(direction);
@@ -73,11 +69,9 @@ public class CelebrityAI : MonoBehaviour
 
         animator.SetBool("IsWalking", true);
 
-        // reached waypoint
         if (distance < 1f)
         {
-            currentState = State.Wait;
-            timer = waitTime;
+            EnterWaitState();
         }
     }
 
@@ -101,32 +95,44 @@ public class CelebrityAI : MonoBehaviour
 
         AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
 
-        // Wait until animation is actually done playing
         if (stateInfo.normalizedTime >= 1f)
         {
-            currentState = State.Walk;
-
             currentWaypoint++;
             if (currentWaypoint >= waypoints.Length)
                 currentWaypoint = 0;
+
+            EnterWalkState();
         }
     }
 
-    // ---------------- ACTION START ----------------
+    // ---------------- STATE STARTERS ----------------
+
+    void EnterWalkState()
+    {
+        currentState = State.Walk;
+        animator.SetBool("IsWalking", true);
+    }
+
+    void EnterWaitState()
+    {
+        currentState = State.Wait;
+        timer = waitTime;
+        animator.SetBool("IsWalking", false);
+    }
+
     void StartAction()
     {
         currentState = State.Act;
-        timer = actionTime;
 
         int randomAction = Random.Range(0, 2);
 
         if (randomAction == 0)
         {
-            animator.SetTrigger("Nails");
+            animator.SetTrigger("Wave");
         }
         else
         {
-            animator.SetTrigger("Wave");
+            animator.SetTrigger("Nails");
         }
     }
 }

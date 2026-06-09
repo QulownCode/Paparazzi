@@ -9,9 +9,9 @@ public class PhotoBag : MonoBehaviour
     public List<PhotoData> bagPhotos = new List<PhotoData>();
 
     private int selectedSlot = -1;
-    private int currentScore = 0;
+    private float currentScore = 0;
 
-    public int CurrentScore => currentScore;
+    public float CurrentScore => currentScore;
     public int SelectedSlot => selectedSlot;
     public int Quota => quota;
     public int BagCapacity => bagCapacity;

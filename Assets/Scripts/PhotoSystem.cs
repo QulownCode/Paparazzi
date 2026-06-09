@@ -12,9 +12,12 @@ public class PhotoSystem : MonoBehaviour
     public float developTime = 6f;
     public float shakeReduceAmount = 0.4f;
 
-    [Header("Scoring")]
-    public int normalScore = 100;
-    public int zoomBonus = 100;
+    [Header("Scoring Weights")]
+    public float distanceWeight = 40f;
+    public float framingWeight = 40f;
+    public float zoomWeight = 20f;
+
+    public ScoreDebugUI debugUI;
 
     private PhotoData currentPhoto;
     private bool targetInSight;
@@ -46,19 +49,13 @@ public class PhotoSystem : MonoBehaviour
         currentPhoto.UpdateDevelopment(Time.deltaTime);
 
         if (Input.GetKeyDown(KeyCode.E))
-        {
             currentPhoto.Shake(shakeReduceAmount);
-        }
 
         if (Input.GetKeyDown(KeyCode.Q))
-        {
             PutPhotoInBag();
-        }
 
         if (Input.GetKeyDown(KeyCode.R))
-        {
             ThrowPhotoAway();
-        }
     }
 
     void TakePhoto()
@@ -71,26 +68,58 @@ public class PhotoSystem : MonoBehaviour
         Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
         RaycastHit hit;
 
-        int photoScore = 0;
+        if (!Physics.Raycast(ray, out hit, range)) return;
+        if (!hit.collider.CompareTag("Celebrity")) return;
 
-        if (Physics.Raycast(ray, out hit, range))
-        {
-            if (hit.collider.CompareTag("Celebrity"))
-            {
-                photoScore = normalScore;
+        Transform target = hit.transform;
 
-                if (isZooming)
-                {
-                    photoScore += zoomBonus;
-                }
-            }
-        }
+        // ---------------- DISTANCE ----------------
+        float distance = Vector3.Distance(playerCamera.transform.position, target.position);
+        float distanceScore = Mathf.Clamp01(1f - distance / photoRange) * distanceWeight;
 
-        currentPhoto = new PhotoData(photoScore, developTime);
+        // ---------------- FRAMING ----------------
+        Vector3 screenPos = playerCamera.WorldToViewportPoint(target.position);
+
+        float centerDist = Vector2.Distance(
+            new Vector2(screenPos.x, screenPos.y),
+            new Vector2(0.5f, 0.5f)
+        );
+
+        float framingScore = Mathf.Clamp01(1f - centerDist) * framingWeight;
+
+        // ---------------- ZOOM ----------------
+        float zoomScore = isZooming ? zoomWeight : 0f;
+
+        // ---------------- BASE ----------------
+        float baseScore = PhotoScoreCalculator.CalculateBaseScore(
+            distanceScore,
+            framingScore,
+            zoomScore
+        );
+
+        // ---------------- POSE (placeholder) ----------------
+        float poseBonus = 0f;
+
+        // ---------------- FINAL ----------------
+        float finalScore = PhotoScoreCalculator.CalculateFinalScore(baseScore, poseBonus);
+
+        bool overflow = PhotoScoreCalculator.CanOverflow(baseScore);
+
+        currentPhoto = new PhotoData(finalScore, developTime);
 
         if (photoUI != null)
-        {
             photoUI.TriggerFlash();
+
+        if (debugUI != null)
+        {
+            debugUI.UpdateDebug(
+                distanceScore,
+                framingScore,
+                zoomScore,
+                baseScore,
+                finalScore,
+                overflow
+            );
         }
     }
 
@@ -99,17 +128,12 @@ public class PhotoSystem : MonoBehaviour
         if (currentPhoto == null) return;
         if (photoBag == null) return;
 
-        bool added = photoBag.TryAddPhoto(currentPhoto);
-
-        if (added)
-        {
+        if (photoBag.TryAddPhoto(currentPhoto))
             currentPhoto = null;
-        }
     }
 
     void ThrowPhotoAway()
     {
-        if (currentPhoto == null) return;
         currentPhoto = null;
     }
 
@@ -124,9 +148,7 @@ public class PhotoSystem : MonoBehaviour
         if (Physics.Raycast(ray, out hit, range))
         {
             if (hit.collider.CompareTag("Celebrity"))
-            {
                 targetInSight = true;
-            }
         }
     }
 }

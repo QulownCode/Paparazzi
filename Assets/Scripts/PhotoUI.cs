@@ -7,15 +7,17 @@ public class PhotoUI : MonoBehaviour
     [Header("References")]
     public PhotoSystem photoSystem;
     public PhotoBag photoBag;
+
     public Image reticle;
     public Image flashImage;
+
     public GameObject photoCard;
     public Image photoCardImage;
     public TMP_Text photoCardText;
+
     public float flashFadeSpeed = 8f;
     private float flashAlpha = 0f;
-    private float randomUpdateTimer = 0f;
-    private int displayedScore = 0;
+
     private float digitSpinTimer = 0f;
     private float digitSpinInterval = 0.03f;
     private int rouletteDisplayScore = 0;
@@ -28,7 +30,7 @@ public class PhotoUI : MonoBehaviour
     public TMP_Text currentPhotoText;
     public TMP_Text controlsText;
 
-    [Header("Bag Slot UI")]
+    [Header("Bag Slots")]
     public TMP_Text bagSlot1;
     public TMP_Text bagSlot2;
     public TMP_Text bagSlot3;
@@ -45,144 +47,52 @@ public class PhotoUI : MonoBehaviour
     {
         if (photoSystem == null || photoBag == null) return;
 
-        if (scoreText != null)
-            scoreText.text = "Score: " + photoBag.CurrentScore;
+        scoreText.text = "Score: " + photoBag.CurrentScore;
+        quotaText.text = "Quota: " + photoBag.Quota;
+        bagText.text = $"Bag: {photoBag.BagPhotos.Count}/{photoBag.BagCapacity}";
 
-        if (quotaText != null)
-            quotaText.text = "Quota: " + photoBag.Quota;
+        controlsText.text =
+            "LMB Take | RMB Zoom | E Shake | Q Bag | R Throw";
 
-        if (bagText != null)
-            bagText.text = "Bag: " + photoBag.BagPhotos.Count + "/" + photoBag.BagCapacity;
+        UpdatePhotoStateUI();
+        UpdateBagSlots();
 
-        if (controlsText != null)
-            controlsText.text = "LMB Take | RMB Zoom | E Shake | Q Bag | R Throw | 1-5 Select | T Trash Bagged Photo";
-
-        if (currentPhotoText != null)
-        {
-            PhotoData currentPhoto = photoSystem.CurrentPhoto;
-
-            if (currentPhoto == null)
-            {
-                currentPhotoText.text = photoSystem.TargetInSight ? "Target in sight" : "No photo in hand";
-            }
-            else if (currentPhoto.isDeveloped)
-            {
-                currentPhotoText.text = "In Hand: Score " + currentPhoto.score + " | Q Bag | R Throw";
-            }
-            else
-            {
-                float percent = currentPhoto.GetDevelopPercent() * 100f;
-                currentPhotoText.text = "In Hand: Developing " + percent.ToString("F0") + "% | E Shake | Q Bag | R Throw";
-            }
-            UpdatePhotoCard();
-        }
-
-        UpdateBagSlotText(bagSlot1, 0);
-        UpdateBagSlotText(bagSlot2, 1);
-        UpdateBagSlotText(bagSlot3, 2);
-        UpdateBagSlotText(bagSlot4, 3);
-        UpdateBagSlotText(bagSlot5, 4);
-
-        if (reticle != null)
-        {
-            reticle.color = photoSystem.TargetInSight ? Color.green : Color.white;
-            reticle.transform.localScale = photoSystem.TargetInSight ? Vector3.one * 1.2f : Vector3.one;
-        }
+        reticle.color = photoSystem.TargetInSight ? Color.green : Color.white;
+        reticle.transform.localScale = photoSystem.TargetInSight ? Vector3.one * 1.2f : Vector3.one;
     }
 
-    void UpdateBagSlotText(TMP_Text slotText, int index)
+    void UpdatePhotoStateUI()
     {
-        if (slotText == null) return;
+        PhotoData photo = photoSystem.CurrentPhoto;
 
-        string prefix = (index == photoBag.SelectedSlot) ? "> " : "";
-
-        if (index >= photoBag.BagCapacity)
+        if (photo == null)
         {
-            slotText.text = "";
-            return;
-        }
-
-        if (index >= photoBag.BagPhotos.Count)
-        {
-            slotText.text = prefix + "Slot " + (index + 1) + ": Empty";
-            return;
-        }
-
-        PhotoData photo = photoBag.BagPhotos[index];
-
-        if (photo.isDeveloped)
-        {
-            slotText.text = prefix + "Slot " + (index + 1) + ": Score " + photo.score;
-        }
-        else
-        {
-            float percent = photo.GetDevelopPercent() * 100f;
-            slotText.text = prefix + "Slot " + (index + 1) + ": Developing " + percent.ToString("F0") + "%";
-        }
-    }
-    void UpdateFlash()
-    {
-        if (flashImage == null) return;
-
-        flashAlpha = Mathf.MoveTowards(flashAlpha, 0f, flashFadeSpeed * Time.deltaTime);
-
-        Color color = flashImage.color;
-        color.a = flashAlpha;
-        flashImage.color = color;
-    }
-    public void TriggerFlash(float alpha = 0.8f)
-    {
-        flashAlpha = alpha;
-
-        if (flashImage != null)
-        {
-            Color color = flashImage.color;
-            color.a = flashAlpha;
-            flashImage.color = color;
-        }
-    }
-    void UpdatePhotoCard()
-    {
-        if (photoCard == null || photoCardImage == null || photoCardText == null || photoSystem == null)
-            return;
-
-        PhotoData currentPhoto = photoSystem.CurrentPhoto;
-
-        if (currentPhoto == null)
-        {
+            currentPhotoText.text = photoSystem.TargetInSight ? "Target in sight" : "No photo";
             photoCard.SetActive(false);
-            randomUpdateTimer = 0f;
-            displayedScore = 0;
-            rouletteDisplayScore = 0;
-            digitSpinTimer = 0f;
-            digitSpinInterval = 0.03f;
+
             revealStarted = false;
+            rouletteDisplayScore = 0;
             return;
         }
 
         photoCard.SetActive(true);
 
-        Color cardColor = photoCardImage.color;
-        float percent = currentPhoto.GetDevelopPercent();
+        float percent = photo.GetDevelopPercent();
+        photoCardImage.color = new Color(1, 1, 1, Mathf.Lerp(0.25f, 1f, percent));
 
-        cardColor.a = Mathf.Lerp(0.25f, 1f, percent);
-        photoCardImage.color = cardColor;
+        int finalScore = Mathf.RoundToInt(photo.score);
 
-        int finalScore = Mathf.Clamp(currentPhoto.score, 0, 999);
-
-        if (currentPhoto.isDeveloped)
+        if (photo.isDeveloped)
         {
+            photoCardText.text = finalScore.ToString("D3");
             revealStarted = false;
-            rouletteDisplayScore = finalScore;
-            photoCardText.text = rouletteDisplayScore.ToString("D3");
             return;
         }
 
+        // roulette start
         if (!revealStarted)
         {
             rouletteDisplayScore = Random.Range(0, 1000);
-            digitSpinTimer = 0f;
-            digitSpinInterval = 0.03f;
             revealStarted = true;
         }
 
@@ -190,50 +100,71 @@ public class PhotoUI : MonoBehaviour
 
         if (digitSpinTimer <= 0f)
         {
-            int finalHundreds = finalScore / 100;
-            int finalTens = (finalScore / 10) % 10;
-            int finalOnes = finalScore % 10;
+            float p = percent;
 
-            int shownHundreds = rouletteDisplayScore / 100;
-            int shownTens = (rouletteDisplayScore / 10) % 10;
-            int shownOnes = rouletteDisplayScore % 10;
-
-            // Early: all digits spin
-            // Mid: hundreds locks
-            // Late: tens locks
-            // End: ones locks
-            if (percent < 0.4f)
-            {
-                shownHundreds = Random.Range(0, 10);
-                shownTens = Random.Range(0, 10);
-                shownOnes = Random.Range(0, 10);
-            }
-            else if (percent < 0.7f)
-            {
-                shownHundreds = finalHundreds;
-                shownTens = Random.Range(0, 10);
-                shownOnes = Random.Range(0, 10);
-            }
-            else if (percent < 0.9f)
-            {
-                shownHundreds = finalHundreds;
-                shownTens = finalTens;
-                shownOnes = Random.Range(0, 10);
-            }
+            if (p < 0.4f)
+                rouletteDisplayScore = Random.Range(0, 1000);
+            else if (p < 0.7f)
+                rouletteDisplayScore = finalScore / 100 * 100 + Random.Range(0, 100);
+            else if (p < 0.9f)
+                rouletteDisplayScore = finalScore / 10 * 10 + Random.Range(0, 10);
             else
-            {
-                shownHundreds = finalHundreds;
-                shownTens = finalTens;
-                shownOnes = finalOnes;
-            }
+                rouletteDisplayScore = finalScore;
 
-            rouletteDisplayScore = shownHundreds * 100 + shownTens * 10 + shownOnes;
-
-            // slow down over time
-            digitSpinInterval = Mathf.Lerp(0.02f, 0.2f, percent);
+            digitSpinInterval = Mathf.Lerp(0.02f, 0.2f, p);
             digitSpinTimer = digitSpinInterval;
         }
 
         photoCardText.text = rouletteDisplayScore.ToString("D3");
+    }
+
+    void UpdateBagSlots()
+    {
+        UpdateSlot(bagSlot1, 0);
+        UpdateSlot(bagSlot2, 1);
+        UpdateSlot(bagSlot3, 2);
+        UpdateSlot(bagSlot4, 3);
+        UpdateSlot(bagSlot5, 4);
+    }
+
+    void UpdateSlot(TMP_Text slot, int index)
+    {
+        if (slot == null) return;
+
+        if (index >= photoBag.BagCapacity)
+        {
+            slot.text = "";
+            return;
+        }
+
+        if (index >= photoBag.BagPhotos.Count)
+        {
+            slot.text = $"Slot {index + 1}: Empty";
+            return;
+        }
+
+        PhotoData photo = photoBag.BagPhotos[index];
+
+        if (photo.isDeveloped)
+            slot.text = $"Slot {index + 1}: Score {photo.score}";
+        else
+            slot.text = $"Slot {index + 1}: Developing {photo.GetDevelopPercent() * 100f:0}%";
+    }
+
+    void UpdateFlash()
+    {
+        flashAlpha = Mathf.MoveTowards(flashAlpha, 0f, flashFadeSpeed * Time.deltaTime);
+
+        if (flashImage != null)
+        {
+            Color c = flashImage.color;
+            c.a = flashAlpha;
+            flashImage.color = c;
+        }
+    }
+
+    public void TriggerFlash(float alpha = 0.8f)
+    {
+        flashAlpha = alpha;
     }
 }
